@@ -1,0 +1,39 @@
+(()=>{'use strict';const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+$$('.tab').forEach(b=>b.addEventListener('click',()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.panel).classList.add('active')}));
+
+// X-ray scanning simulation
+const scan=$('#scanner'),sx=scan.getContext('2d'),photo=$('#photo'),px=photo.getContext('2d'),raw=$('#raw'),rx=raw.getContext('2d'),proc=$('#processed'),prx=proc.getContext('2d'),sig=$('#signal'),sg=sig.getContext('2d');
+let progress=0,running=false,raf=0,last=0;
+const muMap={mixed:.55,organic:.28,metal:1.05,dense:.78};
+function physics(){let mat=$('#material').value,x=+$('#thickness').value/10,E=+$('#energy').value,mu=muMap[mat]*(E===2?.78:1.05),T=Math.exp(-mu*x);$('#materialV').textContent=$('#material').selectedOptions[0].text;$('#thickV').textContent=x.toFixed(1);$('#energyV').textContent=E===2?'High':'Low';$('#muV').textContent=mu.toFixed(2);$('#transV').textContent=(100*T).toFixed(1)+'%';$('#attV').textContent=(-Math.log(T)).toFixed(2);drawFrames(T,mat);drawSignal(T)}
+['material','thickness','energy'].forEach(id=>$('#'+id).addEventListener('input',physics));$('#speed').addEventListener('input',()=>$('#speedV').textContent=(+$('#speed').value/10).toFixed(1)+'×');
+
+function bag(ctx,x,y,w,h,mode){ctx.save();ctx.fillStyle=mode==='visible'?'#334155':'#cbd5e1';ctx.strokeStyle=mode==='visible'?'#0f172a':'#64748b';ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(x,y,w,h,18);ctx.fill();ctx.stroke();ctx.strokeRect(x+w*.35,y-25,w*.3,28);
+ if(mode==='visible'){ctx.fillStyle='#f59e0b';ctx.fillRect(x+35,y+45,75,55);ctx.fillStyle='#22c55e';ctx.beginPath();ctx.arc(x+w*.62,y+h*.55,35,0,7);ctx.fill();ctx.fillStyle='#94a3b8';ctx.fillRect(x+w*.72,y+35,28,110)}
+ else{ctx.globalAlpha=.75;ctx.fillStyle='#f59e0b';ctx.fillRect(x+35,y+45,75,55);ctx.fillStyle='#60a5fa';ctx.beginPath();ctx.arc(x+w*.62,y+h*.55,35,0,7);ctx.fill();ctx.fillStyle='#1e3a8a';ctx.fillRect(x+w*.72,y+35,28,110)}ctx.restore()}
+function drawScanner(){sx.clearRect(0,0,scan.width,scan.height);sx.fillStyle='#e2e8f0';sx.fillRect(0,330,760,40);for(let x=0;x<760;x+=42){sx.fillStyle='#64748b';sx.beginPath();sx.arc(x+15,350,12,0,7);sx.fill()}sx.fillStyle='#475569';sx.fillRect(270,55,230,275);sx.fillStyle='#0f172a';sx.fillRect(315,105,140,225);sx.fillStyle='#ef4444';sx.beginPath();sx.moveTo(300,90);sx.lineTo(385,320);sx.lineTo(470,90);sx.closePath();sx.globalAlpha=.16;sx.fill();sx.globalAlpha=1;sx.fillStyle='#ef4444';sx.font='bold 14px Arial';sx.fillText('X-RAY SOURCE',325,82);sx.fillStyle='#2563eb';sx.fillText('DETECTOR ARRAY',320,400);let bx=-170+progress*900;bag(sx,bx,205,170,120,'visible');sx.fillStyle='#172033';sx.font='bold 16px Arial';sx.fillText('Conveyor motion →',25,315)}
+function setStep(){let n=Math.min(5,Math.floor(progress*6));$$('.step').forEach((e,i)=>e.classList.toggle('active',i===n))}
+function loop(t){if(!running)return;if(!last)last=t;let dt=t-last;last=t;progress+=dt*.000055*(+$('#speed').value/10);if(progress>=1){progress=0}drawScanner();setStep();raf=requestAnimationFrame(loop)}
+$('#startScan').addEventListener('click',()=>{if(running)return;running=true;last=0;raf=requestAnimationFrame(loop)});$('#pauseScan').addEventListener('click',()=>{running=false;cancelAnimationFrame(raf)});$('#resetScan').addEventListener('click',()=>{running=false;cancelAnimationFrame(raf);progress=0;drawScanner();setStep()});
+
+function drawFrames(T,mat){px.clearRect(0,0,420,300);let g=px.createLinearGradient(0,0,420,300);g.addColorStop(0,'#cbd5e1');g.addColorStop(1,'#94a3b8');px.fillStyle=g;px.fillRect(0,0,420,300);bag(px,75,75,270,175,'visible');px.fillStyle='#fff';px.fillText('Visible-light illustrative frame',12,22);
+ rx.clearRect(0,0,420,300);rx.fillStyle=`rgb(${Math.round(25+180*T)},${Math.round(30+180*T)},${Math.round(35+180*T)})`;rx.fillRect(0,0,420,300);bag(rx,75,75,270,175,'xray');rx.fillStyle='#fff';rx.font='14px Arial';rx.fillText('Raw detector transmission',12,22);
+ prx.clearRect(0,0,420,300);prx.fillStyle='#111827';prx.fillRect(0,0,420,300);bag(prx,75,75,270,175,'xray');prx.strokeStyle=mat==='metal'?'#ef4444':'#facc15';prx.lineWidth=4;prx.strokeRect(255,102,48,125);prx.fillStyle='#fff';prx.font='bold 14px Arial';prx.fillText('AI region of interest',245,92);prx.fillText('Pseudo-material visualization',12,22)}
+function drawSignal(T){sg.clearRect(0,0,1120,240);sg.fillStyle='#f8fafc';sg.fillRect(0,0,1120,240);sg.strokeStyle='#cbd5e1';for(let y=40;y<220;y+=40){sg.beginPath();sg.moveTo(0,y);sg.lineTo(1120,y);sg.stroke()}sg.strokeStyle='#2563eb';sg.lineWidth=3;sg.beginPath();for(let x=0;x<1120;x++){let y=120+55*Math.sin(x/37)*(1-T)+18*Math.sin(x/9);if(x===0)sg.moveTo(x,y);else sg.lineTo(x,y)}sg.stroke();sg.fillStyle='#172033';sg.fillText('Simulated detector electrical signal',15,22)}
+physics();drawScanner();
+
+// own image pseudo-xray
+let own=null,OI=$('#ownIn'),OO=$('#ownOut'),oix=OI.getContext('2d'),oox=OO.getContext('2d');
+$('#ownFile').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let u=URL.createObjectURL(f),im=new Image();im.onload=()=>{own=im;fit(im,OI,oix);fit(im,OO,oox);URL.revokeObjectURL(u)};im.src=u});
+function fit(im,c,ct){ct.clearRect(0,0,c.width,c.height);let s=Math.min(c.width/im.width,c.height/im.height),w=im.width*s,h=im.height*s;ct.fillStyle='#111827';ct.fillRect(0,0,c.width,c.height);ct.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h)}
+$('#pseudo').addEventListener('click',()=>{if(!own)return;fit(own,OO,oox);let a=oox.getImageData(0,0,OO.width,OO.height),d=a.data;for(let i=0;i<d.length;i+=4){let g=.299*d[i]+.587*d[i+1]+.114*d[i+2],v=255-g;d[i]=Math.min(255,v*.55);d[i+1]=Math.min(255,80+v*.75);d[i+2]=Math.min(255,130+v*.5)}oox.putImageData(a,0,0)});
+
+// stereo
+const G=$('#geo'),gx=G.getContext('2d');function stereo(){let B=+$('#B').value/100,F=+$('#F').value,Z=+$('#Z').value/100,d=F*B/Z;$('#bv').textContent=B.toFixed(2)+' m';$('#fv').textContent=F+' px';$('#zv').textContent=Z.toFixed(2)+' m';$('#dv').textContent=d.toFixed(1)+' px';$('#recover').textContent=(F*B/d).toFixed(2)+' m';gx.clearRect(0,0,700,430);gx.fillStyle='#f8fafc';gx.fillRect(0,0,700,430);gx.fillStyle='#2563eb';gx.fillRect(120,350,80,45);gx.fillRect(500,350,80,45);gx.fillStyle='#d97706';gx.beginPath();gx.arc(350,70+Z*28,25,0,7);gx.fill();gx.strokeStyle='#64748b';gx.beginPath();gx.moveTo(160,350);gx.lineTo(350,70+Z*28);gx.moveTo(540,350);gx.lineTo(350,70+Z*28);gx.stroke()}['B','F','Z'].forEach(id=>$('#'+id).addEventListener('input',stereo));stereo();
+
+// MRI/CT slice animation
+const SC=$('#sliceC'),scx=SC.getContext('2d'),VC=$('#volumeC'),vcx=VC.getContext('2d');let stimer=null;
+function slices(){let s=+$('#slice').value;$('#sv').textContent=s+' / 32';let w=SC.width,h=SC.height,a=scx.createImageData(w,h),cx=w/2,cy=h/2,p=(s-16)/16;for(let y=0;y<h;y++)for(let x=0;x<w;x++){let nx=(x-cx)/(180*(1-.16*Math.abs(p))),ny=(y-cy)/(145*(1-.12*Math.abs(p))),r=nx*nx+ny*ny,v=r<1?55+175*(1-r):7;if((x-cx+40)**2+(y-cy-8)**2<1400)v=210;let i=(y*w+x)*4;a.data[i]=a.data[i+1]=a.data[i+2]=v;a.data[i+3]=255}scx.putImageData(a,0,0);vcx.clearRect(0,0,600,430);vcx.fillStyle='#f8fafc';vcx.fillRect(0,0,600,430);for(let n=0;n<s;n++){vcx.strokeStyle='rgba(37,99,235,.42)';vcx.beginPath();vcx.ellipse(160+n*7,360-n*8,120-n*1.5,35-n*.35,0,0,7);vcx.stroke()}vcx.fillStyle='#172033';vcx.fillText('Acquired slices: '+s,390,35)}
+$('#slice').addEventListener('input',slices);$('#startSlices').addEventListener('click',()=>{if(stimer)return;stimer=setInterval(()=>{let s=+$('#slice').value;s=s>=32?1:s+1;$('#slice').value=s;slices()},180)});$('#stopSlices').addEventListener('click',()=>{clearInterval(stimer);stimer=null});slices();
+$('#engineStatus').textContent='● Simulation Engine Running';
+})();

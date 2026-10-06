@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Vision & Depth Sensing Virtual Lab v1.2</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div><span class="badge">VERSION 1.2</span><h1>3D Vision & Depth Sensing — Interactive Virtual Laboratory</h1>
+<p>Robotics & Computer Vision | Module 4</p><b>Prepared by: Prof. Dinesh S. Auti | Department of EXCP</b></div>
+<div id="engineStatus" class="status">● Initializing…</div></header>
+<nav>
+<button class="tab active" data-panel="scan">NEW: Real-Time X-Ray Scan</button>
+<button class="tab" data-panel="stereo">Stereo Depth</button>
+<button class="tab" data-panel="medical">MRI/CT</button>
+<button class="tab" data-panel="code">Code Lab</button>
+</nav><main>
+
+<section id="scan" class="panel active">
+<div class="card"><h2>Real-Time Scanning Process — Airport Luggage X-Ray</h2>
+<p>Animated teaching model: <b>X-ray generation → attenuation → detector → digitization → image processing → material classification → AI-assisted review.</b></p>
+<div class="process" id="process">
+ <div class="step active">1<br><b>X-Ray Source</b></div><i>→</i><div class="step">2<br><b>Luggage</b></div><i>→</i><div class="step">3<br><b>Detector</b></div><i>→</i>
+ <div class="step">4<br><b>ADC</b></div><i>→</i><div class="step">5<br><b>Image</b></div><i>→</i><div class="step">6<br><b>AI Review</b></div>
+</div></div>
+
+<div class="grid2">
+<div class="card"><h3>Animated Scanner</h3><canvas id="scanner" width="760" height="430"></canvas>
+<div class="actions"><button id="startScan" class="primary">▶ Start Scan</button><button id="pauseScan">Ⅱ Pause</button><button id="resetScan">↺ Reset</button></div>
+<div class="control"><label>Scan speed <b id="speedV">1.0×</b></label><input id="speed" type="range" min="5" max="25" value="10"></div>
+</div>
+<div class="card"><h3>Physics Controls</h3>
+<div class="control"><label>Material <b id="materialV">Mixed luggage</b></label><select id="material"><option value="mixed">Mixed luggage</option><option value="organic">Organic / low-Z</option><option value="metal">Metal / high-Z</option><option value="dense">Dense object</option></select></div>
+<div class="control"><label>Relative thickness x <b id="thickV">2.0</b></label><input id="thickness" type="range" min="5" max="50" value="20"></div>
+<div class="control"><label>Photon energy <b id="energyV">High</b></label><input id="energy" type="range" min="1" max="2" value="2"></div>
+<div class="equation">I = I₀ e<sup>−μx</sup></div>
+<div class="metrics"><div><b id="muV">0.55</b><span>μ</span></div><div><b id="transV">33.3%</b><span>Transmission</span></div><div><b id="attV">1.10</b><span>−ln(I/I₀)</span></div></div>
+<p class="note">The values are normalized for teaching; they are not scanner calibration data.</p></div>
+</div>
+
+<div class="grid3">
+<div class="card"><h3>Frame A — Visible Luggage</h3><canvas id="photo" width="420" height="300"></canvas><p class="caption">Illustrative luggage view before scanning.</p></div>
+<div class="card"><h3>Frame B — Raw X-Ray</h3><canvas id="raw" width="420" height="300"></canvas><p class="caption">Transmission converted into detector intensity.</p></div>
+<div class="card"><h3>Frame C — Processed / AI</h3><canvas id="processed" width="420" height="300"></canvas><p class="caption">Contrast + pseudo-material classes + region highlight.</p></div>
+</div>
+
+<div class="card"><h3>Detector Signal → Digital Image</h3><canvas id="signal" width="1120" height="240"></canvas>
+<div class="pipeline"><span>X-ray photons</span>→<span>Detector</span>→<span>Electrical signal</span>→<span>ADC</span>→<span>Pixels</span>→<span>Filtering</span>→<span>Edges</span>→<span>AI</span></div></div>
+
+<div class="card"><h3>Try Your Own Photo</h3><p>Upload a local luggage/object photo. The browser creates an <b>illustrative pseudo-X-ray</b> transformation for image-processing demonstration; it does not infer real material density.</p>
+<input id="ownFile" type="file" accept="image/png,image/jpeg,image/webp"> <button id="pseudo" class="primary">Create Pseudo-X-Ray</button>
+<div class="grid2"><canvas id="ownIn" width="600" height="360"></canvas><canvas id="ownOut" width="600" height="360"></canvas></div></div>
+</section>
+
+<section id="stereo" class="panel"><div class="card"><h2>Stereo Depth Demonstration</h2><div class="equation">Z = fB / d</div></div>
+<div class="grid2"><div class="card"><canvas id="geo" width="700" height="430"></canvas></div><div class="card">
+<div class="control"><label>Baseline B <b id="bv">0.12 m</b></label><input id="B" type="range" min="5" max="40" value="12"></div>
+<div class="control"><label>Focal length f <b id="fv">700 px</b></label><input id="F" type="range" min="300" max="1200" value="700"></div>
+<div class="control"><label>Object depth Z <b id="zv">2.50 m</b></label><input id="Z" type="range" min="50" max="800" value="250"></div>
+<div class="metrics"><div><b id="dv">33.6 px</b><span>Disparity</span></div><div><b id="recover">2.50 m</b><span>Recovered Z</span></div></div></div></div></section>
+
+<section id="medical" class="panel"><div class="card"><h2>MRI/CT Slice Scanning Animation</h2><p>Animated synthetic slice acquisition demonstrates how sequential 2D slices can form a 3D volume.</p>
+<button id="startSlices" class="primary">▶ Start Slice Scan</button><button id="stopSlices">Ⅱ Pause</button>
+<div class="control"><label>Slice <b id="sv">1 / 32</b></label><input id="slice" type="range" min="1" max="32" value="1"></div></div>
+<div class="grid2"><div class="card"><h3>Current Slice</h3><canvas id="sliceC" width="600" height="430"></canvas></div><div class="card"><h3>Accumulating Volume</h3><canvas id="volumeC" width="600" height="430"></canvas></div></div></section>
+
+<section id="code" class="panel"><div class="card"><h2>Code Lab — Processing Concepts</h2><textarea>import cv2
+import numpy as np
+
+# Educational image-processing sequence
+img = cv2.imread("scan.png", cv2.IMREAD_GRAYSCALE)
+
+filtered = cv2.GaussianBlur(img, (5,5), 0)
+enhanced = cv2.equalizeHist(filtered)
+edges = cv2.Canny(enhanced, 60, 150)
+
+# Stereo depth relationship:
+# Z = f * B / disparity
+
+cv2.imshow("Enhanced", enhanced)
+cv2.imshow("Edges", edges)
+cv2.waitKey(0)
+cv2.destroyAllWindows()</textarea></div></section>
+</main><footer>Educational visualization only • Not a medical diagnostic or operational security scanner • v1.2</footer>
+<script src="app.js"></script></body></html>
